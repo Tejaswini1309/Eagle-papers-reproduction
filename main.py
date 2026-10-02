@@ -1,7 +1,8 @@
-# EAGLE-1 command-line entry point: `python main.py train|generate [options]`
+# EAGLE-1 command-line entry point: `python main.py train|generate|evaluate [options]`
 
 import argparse
 
+from evaluation import evaluate_benchmarks
 from scripts import run_generation
 from training import train
 
@@ -22,6 +23,12 @@ def main():
     )
     run_generation.add_arguments(generate_parser)
     generate_parser.set_defaults(func=run_generation.run)
+
+    evaluate_parser = commands.add_parser(
+        "evaluate", help="measure speedup and acceptance length on MT-bench, HumanEval, GSM8K, Alpaca"
+    )
+    evaluate_benchmarks.add_arguments(evaluate_parser)
+    evaluate_parser.set_defaults(func=evaluate_benchmarks.run)
 
     args = parser.parse_args()
     args.func(args)

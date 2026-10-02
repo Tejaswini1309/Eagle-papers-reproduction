@@ -25,8 +25,9 @@ Eagle/
 │   └── run_generation.py
 ├── tests/
 │   ├──conftest.py
-│   ├── loss.py
-│   └── train.py
+│   ├──test_draft.py
+│   ├──test_evaluate.py
+│   └──test_verify.py
 ├── training/
 │   ├── loss.py
 │   └── train.py
@@ -114,7 +115,14 @@ Eagle/
 - Marks `evaluation/` as a Python package.
 
 ### evaluate_benchmarks.py
-- Evaluation scripts for MT-bench, HumanEval, GSM8K, and Alpaca.
+- Evaluation scripts for MT-bench, HumanEval, GSM8K, and Alpaca (loaded from the Hugging Face Hub with `datasets`).
+- Each conversation is answered by EAGLE and by vanilla decoding on identical prompts; MT-bench's second turn reuses EAGLE's first answer as history for both.
+- Reports per benchmark:
+  - mean acceptance length (tokens produced per target-LLM pass),
+  - EAGLE and vanilla throughput in tokens per second,
+  - speedup ratio (EAGLE throughput / vanilla throughput),
+  - at temperature 0, how many answers are identical to vanilla decoding.
+- Run with `python main.py evaluate --checkpoint ...` or `python -m evaluation.evaluate_benchmarks`; `--output` saves per-turn results as JSON.
 
 ## scripts/
 
@@ -130,7 +138,8 @@ Eagle/
 ## main.py
 - Command-line interface (CLI) entry point for:
   - training (`python main.py train`, single device; use `scripts/launch_training.sh` for multiple GPUs),
-  - text generation and speedup measurement (`python main.py generate`, same options as `scripts/run_generation.py`).
+  - text generation and speedup measurement (`python main.py generate`, same options as `scripts/run_generation.py`),
+  - benchmark evaluation (`python main.py evaluate`).
 
 ## tests/
 
@@ -150,3 +159,10 @@ Run with `python -m pytest tests`.
   - The tree mask layout.
   - The target logits of every node equal those of running its root-to-node path alone.
   - After `keep_accepted`, the target KV cache equals that of a sequential run and decoding continues identically.
+
+### test_evaluate.py
+- Tests `evaluation/evaluate_benchmarks.py` without network access or real models.
+  - `summarize`: acceptance length, throughputs, speedup and the identical-output count.
+  - `print_table`: output with and without a baseline.
+  - Benchmark loaders: turn handling and the Alpaca instruction/input join, with the dataset download replaced by fake rows.
+  - `run_conversation`: greedy output equals vanilla decoding, and later turns see earlier answers (stub tokenizer, tiny target).
