@@ -1,4 +1,6 @@
-# Draft tree: static tree structure, draft-side KV cache and tree drafting
+# Draft tree: tree structure, draft-side KV cache and tree drafting
+
+import itertools
 
 import torch
 
@@ -8,34 +10,32 @@ from models.target_llm import TargetLLM
 
 class DraftTreeStructure:
     """
-    Static draft-tree shape, given as paths of top-k ranks from the root.
+    Complete draft tree: every node has its `top_k` most likely tokens as children,
+    down to `depth` levels. The root (the token the target LLM has just produced)
+    is implicit and has no node.
 
-    `[0]` is the best first draft token, `[0, 1]` the second-best token
-    following it. The root (the token the target LLM has just produced) is
-    implicit. Nodes are ordered breadth-first, so every depth is a contiguous
-    block `levels[d - 1] = (start, end)`.
+    Nodes are ordered breadth-first, so every depth is a contiguous block
+    `levels[d - 1] = (start, end)`. A node is identified by its path of ranks,
+    e.g. `(0, 1)` is the second-best token following the best first draft token.
     """
 
-    def __init__(self, choices):
-        paths = sorted({tuple(c) for c in choices}, key=lambda p: (len(p), p))
-        index = {p: i for i, p in enumerate(paths)}
+    def __init__(self, top_k: int, depth: int):
+        if top_k < 1 or depth < 1:
+            raise ValueError("top_k and depth must be at least 1")
+        self.top_k, self.max_depth = top_k, depth
 
-        self.parents = []  # parent node index, -1 for children of the root
-        for path in paths:
-            parent = path[:-1]
-            if parent and parent not in index:
-                raise ValueError(f"tree path {list(path)} has no parent {list(parent)}")
-            self.parents.append(index[parent] if parent else -1)
+        paths = [p for d in range(1, depth + 1) for p in itertools.product(range(top_k), repeat=d)]
+        index = {path: i for i, path in enumerate(paths)}
 
         self.num_nodes = len(paths)
+        self.parents = [index.get(path[:-1], -1) for path in paths]  # -1: child of the root
         self.ranks = [path[-1] for path in paths]
         self.depths = [len(path) for path in paths]
-        self.max_depth = max(self.depths)
 
-        self.levels = []
-        for d in range(1, self.max_depth + 1):
-            ids = [i for i, depth in enumerate(self.depths) if depth == d]
-            self.levels.append((ids[0], ids[-1] + 1))
+        self.levels, start = [], 0
+        for d in range(1, depth + 1):
+            self.levels.append((start, start + top_k**d))
+            start += top_k**d
 
         # children[i + 1] are the children of node i; children[0] those of the root.
         # Ordered by rank, i.e. by decreasing draft probability.
@@ -54,7 +54,7 @@ class DraftTreeStructure:
     @classmethod
     def from_config(cls, cfg: dict) -> "DraftTreeStructure":
         """Build from the `draft_tree` section of model_config.yaml."""
-        return cls(cfg["draft_tree"]["choices"])
+        return cls(cfg["draft_tree"]["top_k"], cfg["draft_tree"]["depth"])
 
 
 class DraftKVCache:

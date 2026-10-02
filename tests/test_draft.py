@@ -9,36 +9,40 @@ from models import AutoregressiveHead
 
 
 class TestDraftTreeStructure:
-    def test_breadth_first_order_and_levels(self):
-        tree = DraftTreeStructure([[0, 0], [1], [0], [0, 1]])
-        assert tree.num_nodes == 4 and tree.max_depth == 2
-        assert tree.depths == [1, 1, 2, 2]
-        assert tree.levels == [(0, 2), (2, 4)]
+    def test_size_and_levels(self):
+        tree = DraftTreeStructure(top_k=2, depth=3)
+        assert tree.num_nodes == 2 + 4 + 8
+        assert tree.levels == [(0, 2), (2, 6), (6, 14)]
+        assert tree.depths == [1] * 2 + [2] * 4 + [3] * 8
+        assert tree.max_depth == 3
+
+    @pytest.mark.parametrize("top_k, depth", [(1, 4), (2, 3), (3, 3), (4, 2)])
+    def test_complete_tree_node_count(self, top_k, depth):
+        assert DraftTreeStructure(top_k, depth).num_nodes == sum(top_k**d for d in range(1, depth + 1))
 
     def test_parents_ranks_and_children(self):
-        tree = DraftTreeStructure([[0], [1], [0, 0], [0, 1]])
-        assert tree.parents == [-1, -1, 0, 0]
-        assert tree.ranks == [0, 1, 0, 1]
+        tree = DraftTreeStructure(top_k=2, depth=2)
+        assert tree.parents == [-1, -1, 0, 0, 1, 1]
+        assert tree.ranks == [0, 1, 0, 1, 0, 1]
         assert tree.children[0] == [0, 1]  # children of the root, by rank
         assert tree.children[1] == [2, 3]  # children of node 0
-        assert tree.children[2] == []
+        assert tree.children[2] == [4, 5]  # children of node 1
+        assert tree.children[3] == []      # node 2 is a leaf
 
     def test_ancestor_mask_is_ancestors_and_self_only(self):
-        tree = DraftTreeStructure([[0], [1], [0, 0]])
-        expected = torch.tensor(
-            [[1, 0, 0],
-             [0, 1, 0],
-             [1, 0, 1]], dtype=torch.bool
-        )
-        assert torch.equal(tree.ancestor_mask, expected)
+        mask = DraftTreeStructure(top_k=2, depth=2).ancestor_mask
+        assert mask[2].nonzero().flatten().tolist() == [0, 2]  # path (0, 0)
+        assert mask[5].nonzero().flatten().tolist() == [1, 5]  # path (1, 1)
+        assert mask[1].nonzero().flatten().tolist() == [1]     # depth 1: itself only
 
-    def test_missing_parent_is_rejected(self):
+    @pytest.mark.parametrize("top_k, depth", [(0, 2), (2, 0)])
+    def test_invalid_size_is_rejected(self, top_k, depth):
         with pytest.raises(ValueError):
-            DraftTreeStructure([[0], [1, 0]])
+            DraftTreeStructure(top_k, depth)
 
     def test_from_config(self):
-        tree = DraftTreeStructure.from_config({"draft_tree": {"choices": [[0], [0, 0]]}})
-        assert tree.num_nodes == 2
+        tree = DraftTreeStructure.from_config({"draft_tree": {"top_k": 2, "depth": 2}})
+        assert tree.num_nodes == 6
 
 
 class TestDraftKVCache:

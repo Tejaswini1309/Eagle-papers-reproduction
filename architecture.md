@@ -85,7 +85,7 @@ Eagle/
 ## inference/
 
 ### draft_tree.py
-- `DraftTreeStructure`: the static tree shape, read from `draft_tree.choices` in `configs/model_config.yaml` (paths of top-k ranks from the root).
+- `DraftTreeStructure`: the draft tree is a complete tree. Every node expands to its `top_k` most likely tokens, down to `depth` levels, with both values read from `draft_tree` in `configs/model_config.yaml`.
 - `draft_tree(...)`: builds the draft tree of candidate tokens level by level.
   - Commits the newly accepted positions to the draft cache; the last output is the root's estimated feature.
   - Each node's children are the top-k tokens of the target LM head applied to the node's predicted feature.
@@ -150,7 +150,7 @@ Run with `python -m pytest tests`.
 
 ### test_draft.py
 - Tests `inference/draft_tree.py`.
-  - Tree structure: node order, parents, children and the ancestor mask.
+  - Tree structure: node count, levels, parents, children and the ancestor mask of a complete `top_k` × `depth` tree.
   - `DraftKVCache`: append, crop, overflow, reset.
   - `draft_tree`: every node equals the top-k token obtained by running the head from scratch on that node's path; the cache keeps only committed positions.
 

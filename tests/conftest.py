@@ -41,10 +41,4 @@ def head():
 
 @pytest.fixture(scope="session")
 def tree():
-    # Branches below non-first parents at every depth, so parent bookkeeping is exercised.
-    return DraftTreeStructure(
-        [[0], [1], [2],
-         [0, 0], [0, 1], [1, 0], [1, 1], [2, 0],
-         [0, 0, 0], [0, 0, 1], [1, 0, 0], [2, 0, 0],
-         [1, 0, 0, 0], [2, 0, 0, 0]]
-    )
+    return DraftTreeStructure(top_k=3, depth=3)

@@ -27,14 +27,17 @@ def prefilled_cache(target):
 
 
 def test_tree_attention_mask_layout():
-    tree = DraftTreeStructure([[0], [1], [0, 0]])
+    tree = DraftTreeStructure(top_k=2, depth=2)  # nodes: (0) (1) (0,0) (0,1) (1,0) (1,1)
     mask = build_tree_attention_mask(tree, prefix_len=2, device=torch.device("cpu"))
-    assert mask.shape == (1, 1, 4, 6)
+    assert mask.shape == (1, 1, 7, 9)
     expected_tree_part = torch.tensor(
-        [[1, 0, 0, 0],   # root sees only itself
-         [1, 1, 0, 0],   # node 0 sees root + itself
-         [1, 0, 1, 0],   # node 1 does not see node 0
-         [1, 1, 0, 1]],  # node 2 (child of node 0) sees root, node 0, itself
+        [[1, 0, 0, 0, 0, 0, 0],   # root sees only itself
+         [1, 1, 0, 0, 0, 0, 0],   # node (0) sees root + itself
+         [1, 0, 1, 0, 0, 0, 0],   # node (1) does not see node (0)
+         [1, 1, 0, 1, 0, 0, 0],   # (0,0) sees root, (0), itself
+         [1, 1, 0, 0, 1, 0, 0],   # (0,1) does not see its sibling (0,0)
+         [1, 0, 1, 0, 0, 1, 0],   # (1,0) sees root, (1), itself
+         [1, 0, 1, 0, 0, 0, 1]],  # (1,1)
         dtype=torch.bool,
     )
     assert mask[0, 0, :, :2].all()  # whole prefix visible
