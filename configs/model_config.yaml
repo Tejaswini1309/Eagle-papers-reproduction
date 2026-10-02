@@ -25,3 +25,27 @@ eagle:
   intermediate_size: 11008
   rope_theta: 10000.0
   rms_norm_eps: 1.0e-6
+
+draft_tree:
+  # Each entry is a path of top-k ranks from the root token, e.g. [0, 1] is the
+  # second-best token following the best first draft token.
+  # Default shape is a hand-made starting point, not a tuned tree.
+  choices:
+    - [0]
+    - [1]
+    - [2]
+    - [3]
+    - [0, 0]
+    - [0, 1]
+    - [0, 2]
+    - [1, 0]
+    - [1, 1]
+    - [2, 0]
+    - [0, 0, 0]
+    - [0, 0, 1]
+    - [0, 1, 0]
+    - [1, 0, 0]
+    - [0, 0, 0, 0]
+    - [0, 0, 0, 1]
+    - [0, 0, 1, 0]
+    - [0, 0, 0, 0, 0]

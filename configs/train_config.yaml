@@ -1,1 +1,30 @@
 # Hyperparameters (learning rate, batch size, loss weights)
+
+data:
+  path: "data/sharegpt.json"
+  max_length: 2048
+  num_workers: 2
+
+optimization:
+  lr: 3.0e-5
+  betas: [0.9, 0.95]
+  grad_clip: 0.5
+  batch_size: 4
+  grad_accum_steps: 1
+  epochs: 20
+
+loss:
+  w_cls: 0.1
+  assistant_only: true   # compute loss on assistant tokens only
+
+augmentation:
+  # Uniform noise U(-a, a) added to the head's input features (0 disables)
+  feature_noise: 0.1
+
+runtime:
+  seed: 0
+  device: "auto"        # auto: cuda > mps > cpu
+  dtype: "bfloat16"     # target LLM precision; bf16 avoids fp16 gradient underflow
+  output_dir: "checkpoints"
+  save_every: 1000      # optimizer steps
+  log_every: 50

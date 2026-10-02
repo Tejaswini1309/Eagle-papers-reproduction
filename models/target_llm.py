@@ -86,12 +86,22 @@ class TargetLLM(nn.Module):
         self,
         input_ids: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.Tensor] = None,
+        past_key_values=None,
     ) -> torch.Tensor:
-        """Run the decoder only (no LM head) and return (B, S, H) features."""
+        """
+        Run the decoder only (no LM head) and return (B, S, H) features.
+
+        For inference, pass a `DynamicCache` as `past_key_values` (it is
+        appended to in place); `attention_mask` may then be a 4D boolean
+        tree mask and `position_ids` the tree positions.
+        """
         out = self.model.get_decoder()(
             input_ids=input_ids,
             attention_mask=attention_mask,
-            use_cache=False,
+            position_ids=position_ids,
+            past_key_values=past_key_values,
+            use_cache=past_key_values is not None,
         )
         return out.last_hidden_state
 
