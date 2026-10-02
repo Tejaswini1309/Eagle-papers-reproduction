@@ -12,3 +12,6 @@ torch==2.14.1
 torchaudio==2.11.0
 torchvision==0.29.1
 typing_extensions==4.16.0
+transformers==5.18.0
+PyYAML==6.0.3
+tqdm==4.70.1

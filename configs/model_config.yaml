@@ -1,1 +1,27 @@
 # Model paths, target LLM specifications, and tree structures
+
+# configs/model_config.yaml
+
+target_model:
+  name: "lmsys/vicuna-7b-v1.5"
+  path: "path/to/vicuna"
+
+  # Model dimensions
+  hidden_size: 4096
+  vocab_size: 32000
+
+eagle:
+  feature_dim: 4096
+  embedding_dim: 4096
+
+  # Concatenated [feature ; token_embedding]
+  concat_dim: 8192
+
+  decoder_hidden_size: 4096
+
+  # Draft decoder layer (LLaMA-style, matched to Vicuna-7B)
+  num_layers: 1
+  num_heads: 32
+  intermediate_size: 11008
+  rope_theta: 10000.0
+  rms_norm_eps: 1.0e-6

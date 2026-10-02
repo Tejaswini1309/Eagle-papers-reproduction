@@ -1,1 +1,0 @@
-# Multi-round speculative sampling and verification algorithm
