@@ -27,25 +27,8 @@ eagle:
   rms_norm_eps: 1.0e-6
 
 draft_tree:
-  # Each entry is a path of top-k ranks from the root token, e.g. [0, 1] is the
-  # second-best token following the best first draft token.
-  # Default shape is a hand-made starting point, not a tuned tree.
-  choices:
-    - [0]
-    - [1]
-    - [2]
-    - [3]
-    - [0, 0]
-    - [0, 1]
-    - [0, 2]
-    - [1, 0]
-    - [1, 1]
-    - [2, 0]
-    - [0, 0, 0]
-    - [0, 0, 1]
-    - [0, 1, 0]
-    - [1, 0, 0]
-    - [0, 0, 0, 0]
-    - [0, 0, 0, 1]
-    - [0, 0, 1, 0]
-    - [0, 0, 0, 0, 0]
+  # Complete tree: each node expands to its top_k most likely tokens, for `depth` levels.
+  # Size is top_k + top_k^2 + ... + top_k^depth nodes, all scored in one target pass.
+  # Starting values, to be tuned once a trained head is available.
+  top_k: 3
+  depth: 4
